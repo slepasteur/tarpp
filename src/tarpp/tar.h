@@ -22,7 +22,9 @@ public:
 
 	void add(const std::string tar_name, const std::string& content)
 	{
-
+		char header[HEADER_SIZE];
+		output_.write(header, HEADER_SIZE);
+		output_ << content;
 	}
 
 private:
