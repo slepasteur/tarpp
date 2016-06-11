@@ -13,9 +13,16 @@ namespace tarpp
 class Tar
 {
 public:
+	enum { HEADER_SIZE = 512 };
+
 	Tar(std::ostream& output):
 		output_{output}
 	{
+	}
+
+	void add(const std::string tar_name, const std::string& content)
+	{
+
 	}
 
 private:

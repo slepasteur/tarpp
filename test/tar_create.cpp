@@ -14,3 +14,14 @@ TEST_CASE("A tar file can be created from a ostream.", "[tar][create]")
 	auto out = std::stringstream{};
 	REQUIRE_NOTHROW(Tar{out});
 }
+
+TEST_CASE("Adding content to the tar file increases its size.", "[tar][add]")
+{
+	auto out = std::stringstream{};
+	auto tar = Tar{out};
+
+	auto content = std::string{"content"};
+	tar.add("name", content);
+
+	REQUIRE(out.str().size() == Tar::HEADER_SIZE + content.size());
+}
