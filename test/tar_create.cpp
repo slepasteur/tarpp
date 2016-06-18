@@ -23,5 +23,20 @@ TEST_CASE("Adding content to the tar file increases its size.", "[tar][add]")
 	auto content = std::string{"content"};
 	tar.add("name", content);
 
-	REQUIRE(out.str().size() == Tar::HEADER_SIZE + content.size());
+	REQUIRE(out.str().size() == details::constants::HEADER_SIZE + content.size());
+}
+
+TEST_CASE("Tar header starts with name.", "[tar][header]")
+{
+	auto out = std::stringstream{};
+	auto tar = Tar{out};
+
+	auto content = std::string{"content"};
+	auto name = std::string{"name"};
+	tar.add(name, content);
+
+	auto result = out.str();
+	REQUIRE(result.size() >= name.size());
+	INFO(result);
+	REQUIRE(std::equal(name.begin(), name.end(), result.begin()));
 }
