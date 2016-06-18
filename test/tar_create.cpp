@@ -37,6 +37,24 @@ TEST_CASE("Tar header starts with name.", "[tar][header]")
 
 	auto result = out.str();
 	REQUIRE(result.size() >= name.size());
-	INFO(result);
 	REQUIRE(std::equal(name.begin(), name.end(), result.begin()));
+}
+
+TEST_CASE("Tar header uses USTAR format (version 0).", "[tar][header]")
+{
+	using std::begin; using std::end;
+	constexpr const char USTAR_MAGIC[] = "ustar";
+	constexpr const char USTAR_VERSION[] = {'0', '0'};
+
+	auto out = std::stringstream{};
+	auto tar = Tar{out};
+
+	auto content = std::string{"content"};
+	auto name = std::string{"name"};
+	tar.add(name, content);
+
+	auto result = out.str();
+	REQUIRE(result.size() >= name.size());
+	REQUIRE(std::equal(begin(USTAR_MAGIC), end(USTAR_MAGIC), result.begin() + details::constants::HEADER_MAGIC_OFFSET));
+	REQUIRE(std::equal(begin(USTAR_VERSION), end(USTAR_VERSION), result.begin() + details::constants::HEADER_VERSION_OFFSET));
 }
