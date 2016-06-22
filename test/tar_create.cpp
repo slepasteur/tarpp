@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include <tarpp/tar.h>
+#include <iostream>
 
 using namespace tarpp;
 
@@ -54,7 +55,28 @@ TEST_CASE("Tar header uses USTAR format (version 0).", "[tar][header]")
 	tar.add(name, content);
 
 	auto result = out.str();
-	REQUIRE(result.size() >= name.size());
+	REQUIRE(result.size() > details::constants::HEADER_SIZE);
 	REQUIRE(std::equal(begin(USTAR_MAGIC), end(USTAR_MAGIC), result.begin() + details::constants::HEADER_MAGIC_OFFSET));
 	REQUIRE(std::equal(begin(USTAR_VERSION), end(USTAR_VERSION), result.begin() + details::constants::HEADER_VERSION_OFFSET));
+}
+
+TEST_CASE("Tar header mode is set.", "[tar][header]")
+{
+	using std::begin; using std::end;
+	constexpr const char MODE[] = "0000777";
+
+	auto out = std::stringstream{};
+	auto tar = Tar{out};
+
+	auto content = std::string{"content"};
+	auto name = std::string{"name"};
+	tar.add(name, content, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	auto result = out.str();
+	REQUIRE(result.size() >= details::constants::HEADER_SIZE );
+
+	auto mode_begin = result.begin() + details::constants::HEADER_MODE_OFFSET;
+	auto mode = std::string{mode_begin, mode_begin + sizeof(MODE)};
+	INFO(mode << " (expected: " << MODE << ")")
+	REQUIRE(std::equal(begin(MODE), end(MODE), begin(mode)));
 }

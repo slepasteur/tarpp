@@ -6,59 +6,50 @@
 #define TAR_TAR_H
 
 #include <ostream>
+#include <sys/stat.h>
+
+#include "format.h"
 
 namespace tarpp
 {
 
 namespace details
 {
-
 namespace constants
 {
 
-enum {
+enum
+{
 	HEADER_SIZE = 512,
 
-	HEADER_NAME_OFFSET      = 0,
-	HEADER_MODE_OFFSET      = 100,
-	HEADER_UID_OFFSET       = 108,
-	HEADER_GID_OFFSET       = 116,
-	HEADER_SIZE_OFFSET      = 124,
-	HEADER_MTIME_OFFSET     = 136,
-	HEADER_CHKSUM_OFFSET    = 148,
-	HEADER_TYPE_OFFSET      = 156,
-	HEADER_LINKNAME_OFFSET  = 157,
+	HEADER_NAME_OFFSET = 0,
+	HEADER_MODE_OFFSET = 100,
+	HEADER_UID_OFFSET = 108,
+	HEADER_GID_OFFSET = 116,
+	HEADER_SIZE_OFFSET = 124,
+	HEADER_MTIME_OFFSET = 136,
+	HEADER_CHKSUM_OFFSET = 148,
+	HEADER_TYPE_OFFSET = 156,
+	HEADER_LINKNAME_OFFSET = 157,
 
-	HEADER_MAGIC_OFFSET     = 257,
-	HEADER_VERSION_OFFSET   = 263,
-	HEADER_UNAME_OFFSET     = 265,
-	HEADER_GNAME_OFFSET     = 297,
-	HEADER_DEVMAJOR_OFFSET  = 329,
-	HEADER_DEVMINOR_OFFSET  = 337,
-	HEADER_PREFIX_OFFSET    = 345
+	HEADER_MAGIC_OFFSET = 257,
+	HEADER_VERSION_OFFSET = 263,
+	HEADER_UNAME_OFFSET = 265,
+	HEADER_GNAME_OFFSET = 297,
+	HEADER_DEVMAJOR_OFFSET = 329,
+	HEADER_DEVMINOR_OFFSET = 337,
+	HEADER_PREFIX_OFFSET = 345
 };
 
-
-}
-
-template <size_t LENGTH>
-int format_string(char (&buffer)[LENGTH], const char* content)
-{
-	snprintf(buffer, LENGTH, "%s", content);
-}
-
-template <size_t LENGTH>
-int format_string(char (&buffer)[LENGTH], const std::string& content)
-{
-	format_string(buffer, content.c_str());
-}
+} // constants
 
 struct TarHeader
 {
-	TarHeader():
+	TarHeader()
+		:
 		data_{0}
 	{
-		format_string(header_.magic_, "ustar");
+		format::format_string(header_.magic_, "ustar");
 		header_.version_[0] = '0';
 		header_.version_[1] = '0';
 	}
@@ -91,29 +82,34 @@ struct TarHeader
 	};
 };
 
-}
+} // details
 
 class Tar
 {
 	static_assert(sizeof(details::TarHeader) == details::constants::HEADER_SIZE, "Invalid tar header size.");
 public:
-	explicit Tar(std::ostream& output):
+	explicit Tar(std::ostream &output)
+		:
 		output_{output}
 	{
 	}
 
-	void add(const std::string tar_name, const std::string& content)
+	void add(const std::string tar_name, const std::string &content, mode_t mode = S_IRUSR)
 	{
 		using namespace details::constants;
 		using namespace details;
+		using namespace format;
+
 		auto header = TarHeader{};
 		format_string(header.header_.name_, tar_name);
+		format_octal(header.header_.mode_, mode);
+
 		output_.write(header.data_, HEADER_SIZE);
 		output_ << content;
 	}
 
 private:
-	std::ostream& output_;
+	std::ostream &output_;
 };
 
 }
