@@ -5,7 +5,7 @@
 #include <catch/catch.hpp>
 #include <tarpp/tar.h>
 
-TEST_CASE("Octal format string are generated correctly.")
+TEST_CASE("Octal format string are generated correctly.", "[format]")
 {
 	using namespace tarpp::format;
 
@@ -13,7 +13,7 @@ TEST_CASE("Octal format string are generated correctly.")
 	REQUIRE(format_string == std::string{"%07o"});
 }
 
-TEST_CASE("Octal values are formatted correctly.")
+TEST_CASE("Octal values are formatted correctly.", "[format]")
 {
 	using namespace tarpp::format;
 

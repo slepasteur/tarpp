@@ -80,3 +80,22 @@ TEST_CASE("Tar header mode is set.", "[tar][header]")
 	INFO(mode << " (expected: " << MODE << ")")
 	REQUIRE(std::equal(begin(MODE), end(MODE), begin(mode)));
 }
+
+TEST_CASE("Tar contains content after header", "[tar][content]")
+{
+	using std::begin; using std::end;
+
+	auto out = std::stringstream{};
+	auto tar = Tar{out};
+
+	auto content = std::string{"content"};
+	auto name = std::string{"name"};
+	tar.add(name, content, S_IRWXU | S_IRWXG | S_IRWXO);
+
+	auto result = out.str();
+	REQUIRE(result.size() >= details::constants::HEADER_SIZE + content.size());
+
+	auto tar_content_begin = result.begin() + details::constants::HEADER_SIZE;
+	auto tar_content = std::string{tar_content_begin, tar_content_begin + content.size()};
+	REQUIRE(tar_content == content);
+}
