@@ -13,13 +13,45 @@ namespace format
 namespace details
 {
 
-template <uint8_t LENGTH>
-struct format_octal_zero_filled_helper
-{
-	static constexpr const char value[] = { '%', '0', '0' + LENGTH, 'o', '\0' };
+template<size_t N> struct last_digit_char {
+    enum { value = static_cast<char>('0' + N % 10) };
 };
-template <uint8_t LENGTH>
-constexpr const char format_octal_zero_filled_helper<LENGTH>::value[];
+
+/**
+ * A type containing a char array filled with the values of its template arguments.
+ */
+template <char... cs>
+struct octal_format_string_holder
+{
+    static constexpr const char value[sizeof...(cs)] = { cs... };
+};
+template <char... cs>
+constexpr const char octal_format_string_holder<cs...>::value[sizeof...(cs)];
+
+template<size_t N, template<size_t> class F, char... args>
+struct generate_octal_format_string {
+    using type = typename generate_octal_format_string<N/10, F, F<N>::value, args...>::type;
+};
+
+template<template<size_t> class F, char... args>
+struct generate_octal_format_string<0, F, args...> {
+    using type = octal_format_string_holder<'%', '0', args..., 'o', '\0'>;
+};
+
+/**
+ * A type containing the null terminated format string required to format a number as
+ * a 0 filled octal string for a buffer of size N.
+ * e.g.: "%012o" if N = 12.
+ * @tparam N The size of the buffer.
+ */
+template<size_t N>
+struct octal_format_string {
+    typedef typename generate_octal_format_string<N, last_digit_char>::type type;
+};
+
+template<size_t N>
+using octal_format_string_t = typename octal_format_string<N>::type;
+
 }
 
 /**
@@ -32,7 +64,7 @@ int format_octal(char (&buffer)[LENGTH], T value)
 {
 	static_assert(LENGTH > 0, "Invalid buffer length.");
 	static_assert(std::is_integral<T>::value, "Only integral types can be formatted as octal.");
-	return snprintf(buffer, LENGTH, details::format_octal_zero_filled_helper<LENGTH - 1>::value, value);
+	return snprintf(buffer, LENGTH, details::octal_format_string_t<LENGTH - 1>::value, value);
 }
 
 /**

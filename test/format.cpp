@@ -6,7 +6,9 @@ TEST_CASE("Octal format string are generated correctly.", "[format]")
 {
 	using namespace tarpp::format;
 
-	REQUIRE(details::format_octal_zero_filled_helper<7>::value == std::string{"%07o"});
+	REQUIRE(details::octal_format_string_t<7>::value == std::string{"%07o"});
+	REQUIRE(details::octal_format_string_t<15>::value == std::string{"%015o"});
+	REQUIRE(details::octal_format_string_t<1234>::value == std::string{"%01234o"});
 }
 
 TEST_CASE("Octal values are formatted correctly.", "[format]")
