@@ -88,27 +88,31 @@ class Tar
 {
 	static_assert(sizeof(details::TarHeader) == details::constants::HEADER_SIZE, "Invalid tar header size.");
 public:
-	explicit Tar(std::ostream &output):
-		output_{output}
+	explicit Tar()
 	{
 	}
 
-	void add(const std::string tar_name, const std::string &content, mode_t mode = S_IRUSR)
+	void add(const std::string& tar_name, const std::string &content, mode_t mode = S_IRUSR)
 	{
-		using namespace details::constants;
 		using namespace details;
 		using namespace format;
 
-		auto header = TarHeader{};
-		format_string(header.header_.name_, tar_name);
-		format_octal(header.header_.mode_, mode);
-
-		output_.write(header.data_, HEADER_SIZE);
-		output_ << content;
+		format_string(header_.header_.name_, tar_name);
+		format_octal(header_.header_.mode_, mode);
+        content_ = content;
 	}
 
+    void write(std::ostream &output)
+    {
+        using namespace details::constants;
+
+        output.write(header_.data_, HEADER_SIZE);
+        output << content_;
+    }
+
 private:
-	std::ostream &output_;
+    details::TarHeader header_;
+    std::string content_;
 };
 
 }
