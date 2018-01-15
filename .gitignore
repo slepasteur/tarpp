@@ -32,3 +32,4 @@
 
 # Clion
 .idea
+cmake-build*

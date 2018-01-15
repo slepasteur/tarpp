@@ -1,7 +1,3 @@
-//
-// Created by simon on 6/20/16.
-//
-
 #include "catch/catch.hpp"
 #include <sstream>
 

@@ -88,8 +88,7 @@ class Tar
 {
 	static_assert(sizeof(details::TarHeader) == details::constants::HEADER_SIZE, "Invalid tar header size.");
 public:
-	explicit Tar(std::ostream &output)
-		:
+	explicit Tar(std::ostream &output):
 		output_{output}
 	{
 	}

@@ -10,6 +10,9 @@ namespace tarpp
 namespace format
 {
 
+namespace details
+{
+
 template <uint8_t LENGTH>
 struct format_octal_zero_filled_helper
 {
@@ -17,26 +20,37 @@ struct format_octal_zero_filled_helper
 };
 template <uint8_t LENGTH>
 constexpr const char format_octal_zero_filled_helper<LENGTH>::value[];
+}
 
+/**
+ * Print a integral type into the given buffer as a '0' filled octal value.
+ * @return Number of characters that would have been written for a sufficiently large buffer if successful (not including
+ * the terminating null character), or a negative value if an error occurred.
+ */
 template <typename T, size_t LENGTH>
 int format_octal(char (&buffer)[LENGTH], T value)
 {
 	static_assert(LENGTH > 0, "Invalid buffer length.");
 	static_assert(std::is_integral<T>::value, "Only integral types can be formatted as octal.");
-	snprintf(buffer, LENGTH, format_octal_zero_filled_helper<LENGTH - 1>::value, value);
+	return snprintf(buffer, LENGTH, details::format_octal_zero_filled_helper<LENGTH - 1>::value, value);
 }
 
+/**
+ * Print the content of a string into the given buffer.
+ * @return Number of characters that would have been written for a sufficiently large buffer if successful (not including
+ * the terminating null character), or a negative value if an error occurred.
+ */
 template <size_t LENGTH>
 int format_string(char (&buffer)[LENGTH], const char* content)
 {
 	static_assert(LENGTH > 0, "Invalid buffer length.");
-	snprintf(buffer, LENGTH, "%s", content);
+	return snprintf(buffer, LENGTH, "%s", content);
 }
 
 template <size_t LENGTH>
 int format_string(char (&buffer)[LENGTH], const std::string& content)
 {
-	format_string(buffer, content.c_str());
+	return format_string(buffer, content.c_str());
 }
 
 } // format
