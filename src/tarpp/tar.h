@@ -21,6 +21,7 @@ namespace constants
 enum
 {
 	HEADER_SIZE = 512,
+    BLOCK_SIZE = 512,
 
 	HEADER_NAME_OFFSET = 0,
 	HEADER_MODE_OFFSET = 100,
@@ -105,6 +106,12 @@ public:
 
 		output_.write(header.data_, HEADER_SIZE);
 		output_ << content;
+
+        auto padding_size = BLOCK_SIZE - (content.size() % BLOCK_SIZE);
+        if (padding_size != BLOCK_SIZE)
+        {
+            std::fill_n(std::ostream_iterator<char>(output_), padding_size, 0);
+        }
 	}
 
 private:
