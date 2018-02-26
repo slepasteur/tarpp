@@ -6,14 +6,19 @@
 
 using namespace tarpp;
 
+TEST_CASE("A tar file can be created from a ostream.", "[tar][create]")
+{
+	auto out = std::stringstream{};
+	REQUIRE_NOTHROW(Tar{out});
+}
+
 TEST_CASE("Adding content to the tar file increases its size.", "[tar][add]")
 {
 	auto out = std::stringstream{};
-	auto tar = Tar{};
+	auto tar = Tar{out};
 
 	auto content = std::string{"content"};
 	tar.add("name", content);
-    tar.write(out);
 
 	REQUIRE(out.str().size() == details::constants::HEADER_SIZE + content.size());
 }
@@ -21,12 +26,11 @@ TEST_CASE("Adding content to the tar file increases its size.", "[tar][add]")
 TEST_CASE("Tar header starts with name.", "[tar][header]")
 {
 	auto out = std::stringstream{};
-	auto tar = Tar{};
+	auto tar = Tar{out};
 
 	auto content = std::string{"content"};
 	auto name = std::string{"name"};
 	tar.add(name, content);
-    tar.write(out);
 
 	auto result = out.str();
 	REQUIRE(result.size() >= name.size());
@@ -40,12 +44,11 @@ TEST_CASE("Tar header uses USTAR format (version 0).", "[tar][header]")
 	constexpr const char USTAR_VERSION[] = {'0', '0'};
 
 	auto out = std::stringstream{};
-	auto tar = Tar{};
+	auto tar = Tar{out};
 
 	auto content = std::string{"content"};
 	auto name = std::string{"name"};
 	tar.add(name, content);
-    tar.write(out);
 
 	auto result = out.str();
 	REQUIRE(result.size() > details::constants::HEADER_SIZE);
@@ -59,12 +62,11 @@ TEST_CASE("Tar header mode is set.", "[tar][header]")
 	constexpr const char MODE[] = "0000777";
 
 	auto out = std::stringstream{};
-	auto tar = Tar{};
+	auto tar = Tar{out};
 
 	auto content = std::string{"content"};
 	auto name = std::string{"name"};
 	tar.add(name, content, S_IRWXU | S_IRWXG | S_IRWXO);
-    tar.write(out);
 
 	auto result = out.str();
 	REQUIRE(result.size() >= details::constants::HEADER_SIZE );
@@ -80,12 +82,11 @@ TEST_CASE("Tar contains content after header", "[tar][content]")
 	using std::begin; using std::end;
 
 	auto out = std::stringstream{};
-	auto tar = Tar{};
+	auto tar = Tar{out};
 
 	auto content = std::string{"content"};
 	auto name = std::string{"name"};
 	tar.add(name, content, S_IRWXU | S_IRWXG | S_IRWXO);
-    tar.write(out);
 
 	auto result = out.str();
 	REQUIRE(result.size() >= details::constants::HEADER_SIZE + content.size());
