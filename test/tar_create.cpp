@@ -94,6 +94,12 @@ TEST_CASE("Tar header.", "[tar][header]")
             format::format_octal(size, content.size());
             require_header_content(size, result, HEADER_SIZE_OFFSET, HEADER_SIZE_SIZE);
         }
+
+        SECTION("Modification time is set.") {
+            char mtime[details::constants::HEADER_MTIME_SIZE + 1] = {};
+            format::format_octal(mtime, details::DEFAULT_TIME());
+            require_header_content(mtime, result, HEADER_MTIME_OFFSET, HEADER_MTIME_SIZE);
+        }
     }
 
     SECTION("Specifying the file mode.")
@@ -123,6 +129,32 @@ TEST_CASE("Tar header.", "[tar][header]")
 
         SECTION("Group ID is set.") {
             require_header_content("0000001", result, HEADER_GID_OFFSET, HEADER_GID_SIZE);
+        }
+    }
+
+    SECTION("Adding a big content.")
+    {
+        auto content = std::string(3000000, 'a');
+        tar.add("name", content, TarFileOptions{}.with_gid(1));
+        auto result = out.str();
+
+        SECTION("The size is set accordingly.") {
+            char size[details::constants::HEADER_SIZE_SIZE + 1] = {};
+            format::format_octal(size, content.size());
+            require_header_content(size, result, HEADER_SIZE_OFFSET, HEADER_SIZE_SIZE);
+        }
+    }
+
+    SECTION("Specifying the modification time.")
+    {
+        auto t = time(nullptr);
+        tar.add("name", "content", TarFileOptions{}.with_mtime(t));
+        auto result = out.str();
+
+        SECTION("Modification time is set.") {
+            char mtime[details::constants::HEADER_MTIME_SIZE + 1] = {};
+            format::format_octal(mtime, t);
+            require_header_content(mtime, result, HEADER_MTIME_OFFSET, HEADER_MTIME_SIZE);
         }
     }
 }
