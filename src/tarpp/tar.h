@@ -58,6 +58,20 @@ enum
 };
 
 } // constants
+} // details
+
+enum class FileType : char
+{
+    REGULAR = '0',
+    LINK,
+    SIMLINK,
+    CHARACTER_SPECIAL_DEVICE,
+    BLOCK_SPECIAL_DEVICE,
+    DIRECTORY,
+    FIFO_SPECIAL_FILE
+};
+
+namespace details {
 
 struct TarHeader
 {
@@ -99,8 +113,8 @@ struct TarHeader
 };
 
 inline constexpr mode_t DEFAULT_MODE() { return S_IRUSR; }
-
 inline constexpr time_t DEFAULT_TIME() { return 0; }
+inline constexpr FileType DEFAULT_TYPE() { return FileType::REGULAR; }
 
 } // details
 
@@ -112,38 +126,46 @@ public:
             details::DEFAULT_MODE(),
             getuid(),
             getgid(),
-            details::DEFAULT_TIME()
+            details::DEFAULT_TIME(),
+            details::DEFAULT_TYPE()
         ) {}
 
-    TarFileOptions(mode_t mode, uid_t uid, gid_t gid, time_t mtime) :
+    TarFileOptions(mode_t mode, uid_t uid, gid_t gid, time_t mtime, FileType type) :
         mode_(mode),
         uid_(uid),
         gid_(gid),
-        mtime_(mtime) {}
+        mtime_(mtime),
+        type_(type) {}
 
     mode_t mode() const { return mode_; }
     uid_t uid() const { return uid_; }
     gid_t gid() const { return gid_; }
     time_t mtime() const { return mtime_; }
+    FileType type() const { return type_; }
 
     TarFileOptions with_mode(mode_t m) const
     {
-        return {m, uid_, gid_, mtime_};
+        return {m, uid_, gid_, mtime_, type_};
     }
 
     TarFileOptions with_uid(uid_t u) const
     {
-        return {mode_, u, gid_, mtime_};
+        return {mode_, u, gid_, mtime_, type_};
     }
 
     TarFileOptions with_gid(gid_t g) const
     {
-        return {mode_, uid_, g, mtime_};
+        return {mode_, uid_, g, mtime_, type_};
     }
 
     TarFileOptions with_mtime(time_t t) const
     {
-        return {mode_, uid_, gid_, t};
+        return {mode_, uid_, gid_, t, type_};
+    }
+
+    TarFileOptions with_type(FileType t) const
+    {
+        return {mode_, uid_, gid_, mtime_, t};
     }
 
 private:
@@ -151,6 +173,7 @@ private:
     uid_t uid_;
     gid_t gid_;
     time_t mtime_;
+    FileType type_;
 };
 
 class Tar
@@ -176,6 +199,8 @@ public:
         format_octal_no_null(header.header_.size_, content.size());
         format_octal_no_null(header.header_.mtime_, options.mtime());
 
+        header.header_.type_[0] = static_cast<char>(options.type());
+
         output_.write(header.data_, HEADER_SIZE);
         output_ << content;
 
@@ -189,6 +214,6 @@ private:
     std::ostream &output_;
 };
 
-}
+} // tarpp
 
 #endif //TAR_TAR_H

@@ -99,6 +99,11 @@ TEST_CASE("Tar header.", "[tar][header]")
             format::format_octal(mtime, details::DEFAULT_TIME());
             require_header_content(mtime, result, HEADER_MTIME_OFFSET, HEADER_MTIME_SIZE);
         }
+
+        SECTION("Type of file is set.") {
+            char type = static_cast<char>(details::DEFAULT_TYPE());
+            REQUIRE(result[HEADER_TYPE_OFFSET] == type);
+        }
     }
 
     SECTION("Specifying the file mode.") {
@@ -149,6 +154,15 @@ TEST_CASE("Tar header.", "[tar][header]")
             char mtime[details::constants::HEADER_MTIME_SIZE + 1] = {};
             format::format_octal(mtime, t);
             require_header_content(mtime, result, HEADER_MTIME_OFFSET, HEADER_MTIME_SIZE);
+        }
+    }
+
+    SECTION("Specifying the type of file.") {
+        tar.add("name", "content", TarFileOptions{}.with_type(FileType::DIRECTORY));
+        auto result = out.str();
+
+        SECTION("Type of file is set.") {
+            REQUIRE(result[HEADER_TYPE_OFFSET] == '5');
         }
     }
 }
