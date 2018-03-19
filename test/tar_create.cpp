@@ -81,11 +81,17 @@ TEST_CASE("Tar header.", "[tar][header]")
             format::format_octal(user_id, getuid());
             require_header_content(user_id, result, HEADER_UID_OFFSET, HEADER_UID_SIZE);
         }
+
+        SECTION("Group ID is set.") {
+            char group_id[details::constants::HEADER_GID_SIZE] = {};
+            format::format_octal(group_id, getgid());
+            require_header_content(group_id, result, HEADER_UID_OFFSET, HEADER_UID_SIZE);
+        }
     }
 
     SECTION("Specifying the file mode.")
     {
-        tar.add("name", "content", S_IRWXU | S_IRWXG | S_IRWXO);
+        tar.add("name", "content", TarFileOptions{}.with_mode(S_IRWXU | S_IRWXG | S_IRWXO));
         auto result = out.str();
 
         SECTION("Header mode is set.") {
@@ -95,11 +101,21 @@ TEST_CASE("Tar header.", "[tar][header]")
 
     SECTION("Specifying the user ID.")
     {
-        tar.add("name", "content", details::DEFAULT_MODE(), 1);
+        tar.add("name", "content", TarFileOptions{}.with_uid(1));
         auto result = out.str();
 
-        SECTION("Header mode is set.") {
+        SECTION("User ID is set.") {
             require_header_content("0000001", result, HEADER_UID_OFFSET, HEADER_UID_SIZE);
+        }
+    }
+
+    SECTION("Specifying the group ID.")
+    {
+        tar.add("name", "content", TarFileOptions{}.with_gid(1));
+        auto result = out.str();
+
+        SECTION("Group ID is set.") {
+            require_header_content("0000001", result, HEADER_GID_OFFSET, HEADER_GID_SIZE);
         }
     }
 }
@@ -113,7 +129,7 @@ TEST_CASE("Tar contains content after header", "[tar][content]")
 
 	auto content = std::string{"content"};
 	auto name = std::string{"name"};
-	tar.add(name, content, S_IRWXU | S_IRWXG | S_IRWXO);
+	tar.add(name, content);
 
 	auto result = out.str();
 	REQUIRE(result.size() >= details::constants::HEADER_SIZE + content.size());

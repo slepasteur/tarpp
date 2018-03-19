@@ -102,9 +102,48 @@ struct TarHeader
 };
 
 inline constexpr mode_t DEFAULT_MODE() { return S_IRUSR; }
-inline constexpr uid_t INVALID_UID() { return std::numeric_limits<uid_t >::max(); }
 
 } // details
+
+class TarFileOptions
+{
+public:
+    TarFileOptions() :
+        mode_(details::DEFAULT_MODE()),
+        uid_(getuid()),
+        gid_(getgid())
+    {}
+
+    TarFileOptions(mode_t mode, uid_t uid, gid_t gid) :
+        mode_(mode),
+        uid_(uid),
+        gid_(gid)
+    {}
+
+    mode_t mode() const { return mode_; }
+    uid_t uid() const { return uid_; }
+    gid_t gid() const { return gid_; }
+
+    TarFileOptions with_mode(mode_t m) const
+    {
+        return {m, uid_, gid_};
+    }
+
+    TarFileOptions with_uid(uid_t u) const
+    {
+        return {mode_, u, gid_};
+    }
+
+    TarFileOptions with_gid(gid_t g) const
+    {
+        return {mode_, uid_, g};
+    }
+
+private:
+    mode_t mode_;
+    uid_t uid_;
+    gid_t gid_;
+};
 
 class Tar
 {
@@ -115,7 +154,7 @@ public:
 	{
 	}
 
-	void add(const std::string& tar_name, const std::string &content, mode_t mode = details::DEFAULT_MODE(), uid_t uid = details::INVALID_UID())
+	void add(const std::string& tar_name, const std::string& content, const TarFileOptions& options = TarFileOptions{})
 	{
 		using namespace details::constants;
 		using namespace details;
@@ -123,12 +162,9 @@ public:
 
 		auto header = TarHeader{};
 		format_string(header.header_.name_, tar_name);
-		format_octal(header.header_.mode_, mode);
-        if (uid == INVALID_UID())
-        {
-            uid = getuid();
-        }
-        format_octal(header.header_.uid_, uid);
+		format_octal(header.header_.mode_, options.mode());
+        format_octal(header.header_.uid_, options.uid());
+        format_octal(header.header_.gid_, options.gid());
 
 		output_.write(header.data_, HEADER_SIZE);
 		output_ << content;
