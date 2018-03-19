@@ -104,6 +104,11 @@ TEST_CASE("Tar header.", "[tar][header]")
             char type = static_cast<char>(details::DEFAULT_TYPE());
             REQUIRE(result[HEADER_TYPE_OFFSET] == type);
         }
+
+        SECTION("Link name is set.") {
+            char linkname[HEADER_LINKNAME_SIZE] = {};
+            require_header_content(linkname, result, HEADER_LINKNAME_OFFSET, HEADER_LINKNAME_SIZE);
+        }
     }
 
     SECTION("Specifying the file mode.") {
@@ -163,6 +168,17 @@ TEST_CASE("Tar header.", "[tar][header]")
 
         SECTION("Type of file is set.") {
             REQUIRE(result[HEADER_TYPE_OFFSET] == '5');
+        }
+    }
+
+    SECTION("Specifying the name of the linked file.") {
+        tar.add("name", "content", TarFileOptions{}.with_linkname("another_file.txt"));
+        auto result = out.str();
+
+        SECTION("Link name is set.") {
+            char linkname[HEADER_LINKNAME_SIZE] = {};
+            format::format_string(linkname, "another_file.txt");
+            require_header_content(linkname, result, HEADER_LINKNAME_OFFSET, HEADER_LINKNAME_SIZE);
         }
     }
 }

@@ -30,6 +30,7 @@ enum
     HEADER_MTIME_SIZE = 12,
     HEADER_CHKSUM_SIZE = 8,
     HEADER_TYPE_SIZE = 1,
+    HEADER_LINKNAME_SIZE = 100,
     HEADER_MAGIC_SIZE = 6,
     HEADER_VERSION_SIZE = 2,
     HEADER_UNAME_SIZE = 32,
@@ -48,7 +49,7 @@ enum
     HEADER_TYPE_OFFSET = HEADER_CHKSUM_OFFSET + HEADER_CHKSUM_SIZE,
     HEADER_LINKNAME_OFFSET = HEADER_TYPE_OFFSET + HEADER_TYPE_SIZE,
 
-    HEADER_MAGIC_OFFSET = HEADER_LINKNAME_OFFSET + HEADER_NAME_SIZE,
+    HEADER_MAGIC_OFFSET = HEADER_LINKNAME_OFFSET + HEADER_LINKNAME_SIZE,
     HEADER_VERSION_OFFSET = HEADER_MAGIC_OFFSET + HEADER_MAGIC_SIZE,
     HEADER_UNAME_OFFSET = HEADER_VERSION_OFFSET + HEADER_VERSION_SIZE,
     HEADER_GNAME_OFFSET = HEADER_UNAME_OFFSET + HEADER_UNAME_SIZE,
@@ -127,45 +128,53 @@ public:
             getuid(),
             getgid(),
             details::DEFAULT_TIME(),
-            details::DEFAULT_TYPE()
+            details::DEFAULT_TYPE(),
+            ""
         ) {}
 
-    TarFileOptions(mode_t mode, uid_t uid, gid_t gid, time_t mtime, FileType type) :
+    TarFileOptions(mode_t mode, uid_t uid, gid_t gid, time_t mtime, FileType type, std::string linkname) :
         mode_(mode),
         uid_(uid),
         gid_(gid),
         mtime_(mtime),
-        type_(type) {}
+        type_(type),
+        linkname_(std::move(linkname)) {}
 
     mode_t mode() const { return mode_; }
     uid_t uid() const { return uid_; }
     gid_t gid() const { return gid_; }
     time_t mtime() const { return mtime_; }
     FileType type() const { return type_; }
+    const std::string& linkname() const { return linkname_; }
 
     TarFileOptions with_mode(mode_t m) const
     {
-        return {m, uid_, gid_, mtime_, type_};
+        return {m, uid_, gid_, mtime_, type_, linkname_};
     }
 
     TarFileOptions with_uid(uid_t u) const
     {
-        return {mode_, u, gid_, mtime_, type_};
+        return {mode_, u, gid_, mtime_, type_, linkname_};
     }
 
     TarFileOptions with_gid(gid_t g) const
     {
-        return {mode_, uid_, g, mtime_, type_};
+        return {mode_, uid_, g, mtime_, type_, linkname_};
     }
 
     TarFileOptions with_mtime(time_t t) const
     {
-        return {mode_, uid_, gid_, t, type_};
+        return {mode_, uid_, gid_, t, type_, linkname_};
     }
 
     TarFileOptions with_type(FileType t) const
     {
-        return {mode_, uid_, gid_, mtime_, t};
+        return {mode_, uid_, gid_, mtime_, t, linkname_};
+    }
+
+    TarFileOptions with_linkname(std::string linkname) const
+    {
+        return {mode_, uid_, gid_, mtime_, type_, std::move(linkname)};
     }
 
 private:
@@ -174,6 +183,7 @@ private:
     gid_t gid_;
     time_t mtime_;
     FileType type_;
+    std::string linkname_;
 };
 
 class Tar
@@ -198,8 +208,8 @@ public:
         format_octal(header.header_.gid_, options.gid());
         format_octal_no_null(header.header_.size_, content.size());
         format_octal_no_null(header.header_.mtime_, options.mtime());
-
         header.header_.type_[0] = static_cast<char>(options.type());
+        format_string(header.header_.linkname_, options.linkname());
 
         output_.write(header.data_, HEADER_SIZE);
         output_ << content;
