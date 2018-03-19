@@ -165,6 +165,7 @@ public:
 		format_octal(header.header_.mode_, options.mode());
         format_octal(header.header_.uid_, options.uid());
         format_octal(header.header_.gid_, options.gid());
+		format_octal_no_null(header.header_.size_, content.size());
 
 		output_.write(header.data_, HEADER_SIZE);
 		output_ << content;

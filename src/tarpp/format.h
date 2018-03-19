@@ -5,6 +5,9 @@
 #ifndef TAR_FORMAT_H
 #define TAR_FORMAT_H
 
+#include <cstdio>
+#include <cstring>
+
 namespace tarpp
 {
 namespace format
@@ -55,7 +58,7 @@ using octal_format_string_t = typename octal_format_string<N>::type;
 }
 
 /**
- * Print a integral type into the given buffer as a '0' filled octal value.
+ * Print a integral type into the given buffer as a null terminated '0' filled octal value.
  * @return Number of characters that would have been written for a sufficiently large buffer if successful (not including
  * the terminating null character), or a negative value if an error occurred.
  */
@@ -65,6 +68,22 @@ int format_octal(char (&buffer)[LENGTH], T value)
 	static_assert(LENGTH > 0, "Invalid buffer length.");
 	static_assert(std::is_integral<T>::value, "Only integral types can be formatted as octal.");
 	return snprintf(buffer, LENGTH, details::octal_format_string_t<LENGTH - 1>::value, value);
+}
+
+/**
+ * Print a integral type into the given buffer as a '0' filled octal value without the null terminating character.
+ * @return Number of characters that would have been written for a sufficiently large buffer if successful, or a
+ * negative value if an error occurred.
+ */
+template <typename T, size_t LENGTH>
+int format_octal_no_null(char (&buffer)[LENGTH], T value)
+{
+    static_assert(LENGTH > 0, "Invalid buffer length.");
+    static_assert(std::is_integral<T>::value, "Only integral types can be formatted as octal.");
+    char tmp_buffer[LENGTH + 1];
+    auto result = snprintf(tmp_buffer, LENGTH + 1, details::octal_format_string_t<LENGTH>::value, value);
+    std::memcpy(buffer, tmp_buffer, LENGTH);
+    return result;
 }
 
 /**

@@ -32,8 +32,38 @@ TEST_CASE("Octal values are formatted correctly.", "[format]")
 
     SECTION ("When output would be too long it is truncated.")
     {
-        auto result = format_octal(buffer, 1234);
-        CHECK(result > 3);
-        CHECK(std::strlen(buffer) == 3);
+        auto result = format_octal(buffer, 01234);
+        CHECK(result == 4);
+        CHECK(buffer == std::string{"123"});
+    }
+}
+
+TEST_CASE("Non null terminated octal values are formatted correctly.", "[format]")
+{
+    using namespace tarpp::format;
+
+    char buffer[4];
+    SECTION ("5")
+    {
+        auto result = format_octal_no_null(buffer, 5);
+        auto expected = std::string{"0005"};
+        CHECK(result == 4);
+        CHECK(std::equal(buffer, buffer + 4, expected.begin()));
+    }
+
+    SECTION ("8")
+    {
+        auto result = format_octal_no_null(buffer, 8);
+        auto expected = std::string{"0010"};
+        CHECK(result == 4);
+        CHECK(std::equal(buffer, buffer + 4, expected.begin()));
+    }
+
+    SECTION ("When output would be too long it is truncated.")
+    {
+        auto result = format_octal_no_null(buffer, 012345);
+        auto expected = std::string{"1234"};
+        CHECK(result == 5);
+        CHECK(std::equal(buffer, buffer + 4, expected.begin()));
     }
 }

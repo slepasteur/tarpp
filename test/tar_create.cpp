@@ -53,7 +53,8 @@ TEST_CASE("Tar header.", "[tar][header]")
     SECTION("Default values.")
     {
         auto name = std::string{"name"};
-        tar.add(name, "content");
+        auto content = std::string{"content"};
+        tar.add(name, content);
         auto result = out.str();
 
         REQUIRE(result.size() > HEADER_SIZE);
@@ -85,7 +86,13 @@ TEST_CASE("Tar header.", "[tar][header]")
         SECTION("Group ID is set.") {
             char group_id[details::constants::HEADER_GID_SIZE] = {};
             format::format_octal(group_id, getgid());
-            require_header_content(group_id, result, HEADER_UID_OFFSET, HEADER_UID_SIZE);
+            require_header_content(group_id, result, HEADER_GID_OFFSET, HEADER_GID_SIZE);
+        }
+        
+        SECTION("Size is set.") {
+            char size[details::constants::HEADER_SIZE_SIZE + 1] = {};
+            format::format_octal(size, content.size());
+            require_header_content(size, result, HEADER_SIZE_OFFSET, HEADER_SIZE_SIZE);
         }
     }
 
