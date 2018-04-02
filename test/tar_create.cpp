@@ -1,9 +1,10 @@
 #include "catch/catch.hpp"
 #include <sstream>
-
-#include <tarpp/tar.h>
 #include <iostream>
 #include <unistd.h>
+
+#include "tarpp/tar.h"
+#include "tarpp/user.h"
 
 using namespace tarpp;
 
@@ -109,6 +110,18 @@ TEST_CASE("Tar header.", "[tar][header]")
             char linkname[HEADER_LINKNAME_SIZE] = {};
             require_header_content(linkname, result, HEADER_LINKNAME_OFFSET, HEADER_LINKNAME_SIZE);
         }
+
+        SECTION("User name is set.") {
+            char user_name[details::constants::HEADER_UNAME_SIZE] = {};
+            format::format_string(user_name, user::get_user_name(getuid()));
+            require_header_content(user_name, result, HEADER_UNAME_OFFSET, HEADER_UNAME_SIZE);
+        }
+
+        SECTION("Group name is set.") {
+            char group_name[details::constants::HEADER_GNAME_SIZE] = {};
+            format::format_string(group_name, user::get_group_name(getgid()));
+            require_header_content(group_name, result, HEADER_GNAME_OFFSET, HEADER_GNAME_SIZE);
+        }
     }
 
     SECTION("Specifying the name.") {
@@ -153,12 +166,36 @@ TEST_CASE("Tar header.", "[tar][header]")
         }
     }
 
+    SECTION("Specifying the user name.") {
+        auto username = std::string{"john"};
+        tar.add("name", "content", TarFileOptions{}.with_username(username));
+        auto result = out.str();
+
+        SECTION("User name is set.") {
+            char expected[HEADER_UNAME_SIZE] = {};
+            format::format_string(expected, username);
+            require_header_content(expected, result, HEADER_UNAME_OFFSET, HEADER_UNAME_SIZE);
+        }
+    }
+
     SECTION("Specifying the group ID.") {
         tar.add("name", "content", TarFileOptions{}.with_gid(1));
         auto result = out.str();
 
         SECTION("Group ID is set.") {
             require_header_content("0000001", result, HEADER_GID_OFFSET, HEADER_GID_SIZE);
+        }
+    }
+
+    SECTION("Specifying the group name.") {
+        auto groupname = std::string{"users"};
+        tar.add("name", "content", TarFileOptions{}.with_groupname(groupname));
+        auto result = out.str();
+
+        SECTION("Group name is set.") {
+            char expected[HEADER_GNAME_SIZE] = {};
+            format::format_string(expected, groupname);
+            require_header_content(expected, result, HEADER_GNAME_OFFSET, HEADER_GNAME_SIZE);
         }
     }
 

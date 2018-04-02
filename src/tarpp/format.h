@@ -1,6 +1,4 @@
-//
-// Created by simon on 6/22/16.
-//
+#pragma once
 
 #ifndef TAR_FORMAT_H
 #define TAR_FORMAT_H

@@ -1,6 +1,4 @@
-//
-// Created by simon on 6/20/16.
-//
+#pragma once
 
 #ifndef TAR_TAR_H
 #define TAR_TAR_H
@@ -10,6 +8,7 @@
 #include <sys/stat.h>
 
 #include "format.h"
+#include "user.h"
 
 namespace tarpp {
 
@@ -129,16 +128,30 @@ public:
             getgid(),
             details::DEFAULT_TIME(),
             details::DEFAULT_TYPE(),
-            ""
+            "",
+            user::get_user_name(getuid()),
+            user::get_group_name(getgid())
         ) {}
 
-    TarFileOptions(mode_t mode, uid_t uid, gid_t gid, time_t mtime, FileType type, std::string linkname) :
+    TarFileOptions(
+        mode_t mode,
+        uid_t uid,
+        gid_t gid,
+        time_t mtime,
+        FileType type,
+        std::string linkname,
+        std::string username,
+        std::string groupname
+    ) :
         mode_(mode),
         uid_(uid),
         gid_(gid),
         mtime_(mtime),
         type_(type),
-        linkname_(std::move(linkname)) {}
+        linkname_(std::move(linkname)),
+        username_(std::move(username)),
+        groupname_(std::move(groupname))
+    {}
 
     mode_t mode() const { return mode_; }
     uid_t uid() const { return uid_; }
@@ -146,35 +159,47 @@ public:
     time_t mtime() const { return mtime_; }
     FileType type() const { return type_; }
     const std::string& linkname() const { return linkname_; }
+    const std::string& username() const { return username_; }
+    const std::string& groupname() const { return groupname_; }
 
     TarFileOptions with_mode(mode_t m) const
     {
-        return {m, uid_, gid_, mtime_, type_, linkname_};
+        return {m, uid_, gid_, mtime_, type_, linkname_, username_, groupname_};
     }
 
     TarFileOptions with_uid(uid_t u) const
     {
-        return {mode_, u, gid_, mtime_, type_, linkname_};
+        return {mode_, u, gid_, mtime_, type_, linkname_, username_, groupname_};
     }
 
     TarFileOptions with_gid(gid_t g) const
     {
-        return {mode_, uid_, g, mtime_, type_, linkname_};
+        return {mode_, uid_, g, mtime_, type_, linkname_, username_, groupname_};
     }
 
     TarFileOptions with_mtime(time_t t) const
     {
-        return {mode_, uid_, gid_, t, type_, linkname_};
+        return {mode_, uid_, gid_, t, type_, linkname_, username_, groupname_};
     }
 
     TarFileOptions with_type(FileType t) const
     {
-        return {mode_, uid_, gid_, mtime_, t, linkname_};
+        return {mode_, uid_, gid_, mtime_, t, linkname_, username_, groupname_};
     }
 
     TarFileOptions with_linkname(std::string linkname) const
     {
-        return {mode_, uid_, gid_, mtime_, type_, std::move(linkname)};
+        return {mode_, uid_, gid_, mtime_, type_, std::move(linkname), username_, groupname_};
+    }
+
+    TarFileOptions with_username(std::string username) const
+    {
+        return {mode_, uid_, gid_, mtime_, type_, linkname_, std::move(username), groupname_};
+    }
+
+    TarFileOptions with_groupname(std::string groupname) const
+    {
+        return {mode_, uid_, gid_, mtime_, type_, linkname_, username_, std::move(groupname)};
     }
 
 private:
@@ -184,6 +209,8 @@ private:
     time_t mtime_;
     FileType type_;
     std::string linkname_;
+    std::string username_;
+    std::string groupname_;
 };
 
 class Tar
@@ -210,6 +237,8 @@ public:
         format_octal_no_null(header.header_.mtime_, options.mtime());
         header.header_.type_[0] = static_cast<char>(options.type());
         format_string_opt_null(header.header_.linkname_, options.linkname());
+        format_string(header.header_.uname_, options.username());
+        format_string(header.header_.gname_, options.groupname());
 
         output_.write(header.data_, HEADER_SIZE);
         output_ << content;
