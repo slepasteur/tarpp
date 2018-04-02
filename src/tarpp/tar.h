@@ -3,6 +3,7 @@
 #ifndef TAR_TAR_H
 #define TAR_TAR_H
 
+#include <algorithm>
 #include <ostream>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -115,6 +116,24 @@ struct TarHeader
 inline constexpr mode_t DEFAULT_MODE() { return S_IRUSR; }
 inline constexpr time_t DEFAULT_TIME() { return 0; }
 inline constexpr FileType DEFAULT_TYPE() { return FileType::REGULAR; }
+
+inline void format_name(TarHeader& header, const std::string &name)
+{
+
+    if (name.size() <= constants::HEADER_NAME_SIZE)
+    {
+        format::format_string_opt_null(header.header_.name_, name);
+    }
+    else
+    {
+        auto prefix_size = std::min(name.size() - constants::HEADER_NAME_SIZE, (size_t)constants::HEADER_PREFIX_SIZE);
+        auto prefix_begin = std::begin(name);
+        auto prefix_end = std::next(prefix_begin, prefix_size);
+        std::copy(prefix_begin, prefix_end, header.header_.prefix_);
+        auto name_end = std::next(prefix_end, constants::HEADER_NAME_SIZE);
+        std::copy(prefix_end, name_end, header.header_.name_);
+    }
+}
 
 } // details
 
@@ -229,7 +248,8 @@ public:
         using namespace format;
 
         auto header = TarHeader{};
-        format_string_opt_null(header.header_.name_, tar_name);
+        //format_string_opt_null(header.header_.name_, tar_name);
+        format_name(header, tar_name);
         format_octal(header.header_.mode_, options.mode());
         format_octal(header.header_.uid_, options.uid());
         format_octal(header.header_.gid_, options.gid());

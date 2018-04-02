@@ -137,7 +137,7 @@ TEST_CASE("Tar header.", "[tar][header]")
         }
     }
 
-    SECTION("Specifying the maximum name size.") {
+    SECTION("Specifying a name of maximum size.") {
         auto name = std::string(HEADER_NAME_SIZE, 'z');
         REQUIRE(name.size() == HEADER_NAME_SIZE);
         tar.add(name, "content");
@@ -145,6 +145,44 @@ TEST_CASE("Tar header.", "[tar][header]")
 
         SECTION("Name is complete but not null-terminated.") {
             require_header_content(name.c_str(), result, HEADER_NAME_OFFSET, HEADER_NAME_SIZE);
+        }
+    }
+
+    SECTION("Specifying a name greater than the maximum size.") {
+        auto name_part = std::string(HEADER_NAME_SIZE, 'n');
+        REQUIRE(name_part.size() == HEADER_NAME_SIZE);
+        auto prefix_part = std::string(50, 'p');
+        auto name = prefix_part + name_part;
+        REQUIRE(name.size() > HEADER_NAME_SIZE);
+        tar.add(name, "content");
+        auto result = out.str();
+
+        SECTION("The name field is field with the end of the name.") {
+            require_header_content(name_part.c_str(), result, HEADER_NAME_OFFSET, HEADER_NAME_SIZE);
+        }
+
+        SECTION("The prefix field contains the rest of the name.") {
+            char expected_prefix_field[HEADER_PREFIX_SIZE] = {};
+            std::copy(prefix_part.begin(), prefix_part.end(), expected_prefix_field);
+            require_header_content(expected_prefix_field, result, HEADER_PREFIX_OFFSET, HEADER_PREFIX_SIZE);
+        }
+    }
+
+    SECTION("Specifying a name greater than the name and prefix maximum size truncates the end of the name.") {
+        auto name_part = std::string(HEADER_NAME_SIZE, 'n');
+        REQUIRE(name_part.size() == HEADER_NAME_SIZE);
+        auto prefix_part = std::string(HEADER_PREFIX_SIZE, 'p');
+        auto name = prefix_part + name_part + "truncated";
+        REQUIRE(name.size() > HEADER_NAME_SIZE + HEADER_PREFIX_SIZE);
+        tar.add(name, "content");
+        auto result = out.str();
+
+        SECTION("The name field contains the second part of the name.") {
+            require_header_content(name_part.c_str(), result, HEADER_NAME_OFFSET, HEADER_NAME_SIZE);
+        }
+
+        SECTION("The prefix field contains the beginning of the name.") {
+            require_header_content(prefix_part.c_str(), result, HEADER_PREFIX_OFFSET, HEADER_PREFIX_SIZE);
         }
     }
 
@@ -201,7 +239,7 @@ TEST_CASE("Tar header.", "[tar][header]")
 
     SECTION("Adding a big content.") {
         auto content = std::string(3000000, 'a');
-        tar.add("name", content, TarFileOptions{}.with_gid(1));
+        tar.add("name", content);
         auto result = out.str();
 
         SECTION("The size is set accordingly.") {
