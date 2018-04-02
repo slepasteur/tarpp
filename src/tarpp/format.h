@@ -109,6 +109,22 @@ int format_string(char (&buffer)[LENGTH], const std::string &content)
     return format_string(buffer, content.c_str());
 }
 
+/**
+ * Print the content of a string into the given buffer. If the buffer is not large enough, it is not null-terminated.
+ * @return Number of characters that would have been written for a sufficiently large buffer if successful (not including
+ * the terminating null character), or a negative value if an error occurred.
+ */
+template<size_t LENGTH>
+int format_string_opt_null(char (&buffer)[LENGTH], const std::string &content)
+{
+    auto result = format_string(buffer, content.c_str());
+    if (content.size() >= LENGTH)
+    {
+        buffer[LENGTH - 1] = content[LENGTH - 1];
+    }
+    return result;
+}
+
 } // format
 } // tarpp
 

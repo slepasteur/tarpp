@@ -202,7 +202,7 @@ public:
         using namespace format;
 
         auto header = TarHeader{};
-        format_string(header.header_.name_, tar_name);
+        format_string_opt_null(header.header_.name_, tar_name);
         format_octal(header.header_.mode_, options.mode());
         format_octal(header.header_.uid_, options.uid());
         format_octal(header.header_.gid_, options.gid());

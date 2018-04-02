@@ -111,6 +111,30 @@ TEST_CASE("Tar header.", "[tar][header]")
         }
     }
 
+    SECTION("Specifying the name.") {
+        auto name = std::string{"another name.tar.gz"};
+        REQUIRE(name.size() <= HEADER_NAME_SIZE);
+        tar.add(name, "content");
+        auto result = out.str();
+
+        SECTION("Name is set.") {
+            char expected_name_field[HEADER_NAME_SIZE] = {};
+            std::copy(name.begin(), name.end(), expected_name_field);
+            require_header_content(expected_name_field, result, HEADER_NAME_OFFSET, HEADER_NAME_SIZE);
+        }
+    }
+
+    SECTION("Specifying the maximum name size.") {
+        auto name = std::string(HEADER_NAME_SIZE, 'z');
+        REQUIRE(name.size() == HEADER_NAME_SIZE);
+        tar.add(name, "content");
+        auto result = out.str();
+
+        SECTION("Name is complete but not null-terminated.") {
+            require_header_content(name.c_str(), result, HEADER_NAME_OFFSET, HEADER_NAME_SIZE);
+        }
+    }
+
     SECTION("Specifying the file mode.") {
         tar.add("name", "content", TarFileOptions{}.with_mode(S_IRWXU | S_IRWXG | S_IRWXO));
         auto result = out.str();
