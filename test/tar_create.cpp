@@ -205,6 +205,16 @@ TEST_CASE("Tar header.", "[tar][header]")
             require_header_content(linkname, result, HEADER_LINKNAME_OFFSET, HEADER_LINKNAME_SIZE);
         }
     }
+
+    SECTION("Specifying the name of the linked file of maximum length.") {
+        auto linkname = std::string(HEADER_LINKNAME_SIZE, 'x');
+        tar.add("name", "content", TarFileOptions{}.with_linkname(linkname));
+        auto result = out.str();
+
+        SECTION("Link name is set.") {
+            require_header_content(linkname.c_str(), result, HEADER_LINKNAME_OFFSET, HEADER_LINKNAME_SIZE);
+        }
+    }
 }
 
 TEST_CASE("Tar contains content after header", "[tar][content]")

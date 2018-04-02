@@ -209,7 +209,7 @@ public:
         format_octal_no_null(header.header_.size_, content.size());
         format_octal_no_null(header.header_.mtime_, options.mtime());
         header.header_.type_[0] = static_cast<char>(options.type());
-        format_string(header.header_.linkname_, options.linkname());
+        format_string_opt_null(header.header_.linkname_, options.linkname());
 
         output_.write(header.data_, HEADER_SIZE);
         output_ << content;
