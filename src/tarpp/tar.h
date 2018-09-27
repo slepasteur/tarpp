@@ -4,6 +4,7 @@
 #define TAR_TAR_H
 
 #include <algorithm>
+#include <numeric>
 #include <ostream>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -237,8 +238,15 @@ class Tar
     static_assert(sizeof(details::TarHeader) == details::constants::HEADER_SIZE, "Invalid tar header size.");
 public:
     explicit Tar(std::ostream &output) :
-        output_{output}
+        output_{&output}
+    {}
+
+    ~Tar()
     {
+        if (output_)
+        {
+            finalize();
+        }
     }
 
     void add(const std::string &tar_name, const std::string &content, const TarFileOptions &options = TarFileOptions{})
@@ -246,6 +254,8 @@ public:
         using namespace details::constants;
         using namespace details;
         using namespace format;
+
+        if (!output_) return;
 
         auto header = TarHeader{};
         //format_string_opt_null(header.header_.name_, tar_name);
@@ -260,17 +270,33 @@ public:
         format_string(header.header_.uname_, options.username());
         format_string(header.header_.gname_, options.groupname());
 
-        output_.write(header.data_, HEADER_SIZE);
-        output_ << content;
+        set_checksum(header);
+
+        output_->write(header.data_, HEADER_SIZE);
+        *output_ << content;
 
         auto padding_size = BLOCK_SIZE - (content.size() % BLOCK_SIZE);
         if (padding_size != BLOCK_SIZE) {
-            std::fill_n(std::ostream_iterator<char>(output_), padding_size, 0);
+            std::fill_n(std::ostream_iterator<char>(*output_), padding_size, 0);
         }
     }
 
+    void finalize()
+    {
+        using namespace details::constants;
+        std::fill_n(std::ostream_iterator<char>(*output_), BLOCK_SIZE * 2, 0);
+        output_ = nullptr;
+    }
+
 private:
-    std::ostream &output_;
+    void set_checksum(details::TarHeader& header)
+    {
+        std::fill(std::begin(header.header_.chksum_), std::end(header.header_.chksum_), ' ');
+        int64_t chksum = std::accumulate(std::begin(header.data_), std::end(header.data_), int64_t{0});
+        format::format_octal(header.header_.chksum_, chksum);
+    }
+
+    std::ostream *output_;
 };
 
 } // tarpp

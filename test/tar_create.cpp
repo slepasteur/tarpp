@@ -36,6 +36,31 @@ TEST_CASE("Tar size is a multiple of block size.", "[tar][add]")
     REQUIRE(out.str().size() % details::constants::BLOCK_SIZE == 0);
 }
 
+TEST_CASE("A finalized tar ends with two 0 blocks.", "[tar][add]")
+{
+    auto out = std::stringstream{};
+
+    SECTION("dtor")
+    {
+        {
+            auto tar = Tar{out};
+        }
+        auto data = out.str();
+        
+        REQUIRE(data.size() >= details::constants::BLOCK_SIZE * 2);
+        REQUIRE(std::all_of(data.rbegin(), std::next(data.rbegin(), details::constants::BLOCK_SIZE * 2), [](char b){ return b == 0; }));
+    }
+
+    SECTION("finalize method")
+    {
+        auto tar = Tar{out};
+        tar.finalize();
+        auto data = out.str();
+        
+        REQUIRE(data.size() >= details::constants::BLOCK_SIZE * 2);
+        REQUIRE(std::all_of(data.rbegin(), std::next(data.rbegin(), details::constants::BLOCK_SIZE * 2), [](char b){ return b == 0; }));
+    }
+}
 void require_header_content(const char *expected, const std::string &data, int offset, int length)
 {
     auto field_begin = std::next(data.begin(), offset);
@@ -122,6 +147,12 @@ TEST_CASE("Tar header.", "[tar][header]")
             format::format_string(group_name, user::get_group_name(getgid()));
             require_header_content(group_name, result, HEADER_GNAME_OFFSET, HEADER_GNAME_SIZE);
         }
+
+        SECTION("Checksum is valid.") {
+            char checksum[details::constants::HEADER_CHKSUM_SIZE] = {'0', '0', '1', '1', '1', '0', '1'};
+            require_header_content(checksum, result, HEADER_CHKSUM_OFFSET, HEADER_CHKSUM_SIZE);
+        }
+        
     }
 
     SECTION("Specifying the name.") {
